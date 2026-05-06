@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>卓球対戦記録</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f8; color: #2d3748; min-height: 100vh; }
+
+    header { background: linear-gradient(135deg, #1a365d, #2a4a7f); color: white; padding: 20px 24px; text-align: center; }
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+    .status { font-size: 0.75rem; margin-top: 6px; opacity: 0.7; }
+
+    .container { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+
+    .year-card { background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 12px; }
+    .year-label { font-size: 0.8rem; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+    .year-row { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; }
+    .year-col .col-label { font-size: 0.72rem; color: #a0aec0; font-weight: 600; margin-bottom: 4px; }
+    .year-col .col-val { font-size: 1.6rem; font-weight: 800; }
+    .cv1  { color: #1a365d; }
+    .cv2  { color: #2b6cb0; }
+    .cvdr { color: #d69e2e; }
+    #statsArea { margin-bottom: 16px; }
+
+    .form-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .form-card h2 { font-size: 0.9rem; color: #718096; margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 0.8rem; color: #718096; font-weight: 600; margin-bottom: 6px; }
+    input[type="date"] { width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; outline: none; }
+    input[type="date"]:focus { border-color: #1a365d; }
+
+    .score-wrap { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+    .score-col { display: flex; flex-direction: column; }
+    .score-group { display: flex; gap: 4px; }
+    .plabel { font-size: 0.75rem; color: #a0aec0; text-align: center; margin-top: 6px; }
+    .sep { font-size: 1.2rem; color: #a0aec0; font-weight: 700; text-align: center; }
+
+    .score-btn { flex: 1; padding: 10px 0; border: 2px solid #e2e8f0; border-radius: 8px; background: white; font-size: 1.1rem; font-weight: 700; color: #a0aec0; cursor: pointer; }
+    .score-btn.on { background: #1a365d; border-color: #1a365d; color: white; }
+
+    .add-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #1a365d, #2a4a7f); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 4px; }
+    .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .history-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .history-head h2 { font-size: 0.9rem; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .clear-btn { font-size: 0.75rem; color: #1a365d; background: none; border: 1px solid #a0b4cc; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+
+    .empty { text-align: center; color: #a0aec0; padding: 32px 0; font-size: 0.9rem; }
+    .loading { text-align: center; color: #a0aec0; padding: 32px 0; font-size: 0.9rem; }
+
+    .match-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f4f8; gap: 10px; }
+    .match-item:last-child { border-bottom: none; }
+    .mdate { font-size: 0.78rem; color: #a0aec0; min-width: 50px; }
+    .mresult { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .mplayer { font-size: 0.85rem; font-weight: 600; }
+    .mscore { font-size: 1.1rem; font-weight: 800; color: #2d3748; }
+    .badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; min-width: 52px; text-align: center; }
+    .b1    { background: #eef2f8; color: #1a365d; }
+    .b2    { background: #ebf8ff; color: #2b6cb0; }
+    .bdraw { background: #fffff0; color: #d69e2e; }
+    .del-btn { background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1rem; padding: 4px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏓 卓球対戦記録</h1>
+  <p>KZ vs AKI</p>
+  <div class="status" id="connStatus">接続中...</div>
+</header>
+
+<div class="container">
+  <div id="statsArea"></div>
+
+  <div class="form-card">
+    <h2>試合結果を追加</h2>
+    <div class="form-row">
+      <label>日付</label>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="form-row">
+      <label>スコア</label>
+      <div class="score-wrap">
+        <div class="score-col">
+          <div class="score-group" id="grp1">
+            <button class="score-btn on" data-v="0">0</button>
+            <button class="score-btn"    data-v="1">1</button>
+            <button class="score-btn"    data-v="2">2</button>
+            <button class="score-btn"    data-v="3">3</button>
+            <button class="score-btn"    data-v="4">4</button>
+          </div>
+          <div class="plabel">KZ</div>
+        </div>
+        <div class="sep">:</div>
+        <div class="score-col">
+          <div class="score-group" id="grp2">
+            <button class="score-btn on" data-v="0">0</button>
+            <button class="score-btn"    data-v="1">1</button>
+            <button class="score-btn"    data-v="2">2</button>
+            <button class="score-btn"    data-v="3">3</button>
+            <button class="score-btn"    data-v="4">4</button>
+          </div>
+          <div class="plabel">AKI</div>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" id="addBtn" disabled>試合を記録する</button>
+  </div>
+
+  <div class="history-card">
+    <div class="history-head">
+      <h2>試合履歴</h2>
+      <button class="clear-btn" id="clearBtn">全削除</button>
+    </div>
+    <div id="list"><div class="loading">接続中...</div></div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+(function() {
+
+  // Firebase 設定
+  var firebaseConfig = {
+    apiKey: "AIzaSyBctGwabculzZk4_FHU1wN6SCGERbwYa04",
+    authDomain: "takkyuu-aaa6e.firebaseapp.com",
+    databaseURL: "https://takkyuu-aaa6e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "takkyuu-aaa6e",
+    storageBucket: "takkyuu-aaa6e.firebasestorage.app",
+    messagingSenderId: "270516968046",
+    appId: "1:270516968046:web:45055f511b5d0f2dfda47f"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.database();
+  var matchesRef = db.ref('matches');
+
+  // 過去データ（DBが空の場合に初期投入）
+  var INIT = [
+    {id:1,  date:'2026-01-10', s1:3, s2:1},
+    {id:2,  date:'2026-01-11', s1:4, s2:0},
+    {id:3,  date:'2026-01-12', s1:3, s2:1},
+    {id:4,  date:'2026-01-17', s1:1, s2:3},
+    {id:5,  date:'2026-01-18', s1:1, s2:3},
+    {id:6,  date:'2026-01-24', s1:2, s2:2},
+    {id:7,  date:'2026-01-25', s1:2, s2:2},
+    {id:8,  date:'2026-02-07', s1:1, s2:3},
+    {id:9,  date:'2026-02-08', s1:2, s2:2},
+    {id:10, date:'2026-02-11', s1:1, s2:3},
+    {id:11, date:'2026-02-15', s1:2, s2:2},
+    {id:12, date:'2026-02-21', s1:3, s2:1},
+    {id:13, date:'2026-02-23', s1:2, s2:2},
+    {id:14, date:'2026-03-01', s1:2, s2:2},
+    {id:15, date:'2026-03-07', s1:1, s2:3},
+    {id:16, date:'2026-03-08', s1:3, s2:1},
+    {id:17, date:'2026-03-14', s1:1, s2:3},
+    {id:18, date:'2026-03-15', s1:2, s2:2},
+    {id:19, date:'2026-03-21', s1:3, s2:1},
+    {id:20, date:'2026-03-22', s1:1, s2:3},
+    {id:21, date:'2026-03-28', s1:2, s2:2},
+    {id:22, date:'2026-03-29', s1:2, s2:2},
+    {id:23, date:'2026-04-11', s1:3, s2:1},
+    {id:24, date:'2026-04-12', s1:2, s2:2},
+    {id:25, date:'2026-04-25', s1:2, s2:2},
+    {id:26, date:'2026-04-26', s1:4, s2:0},
+    {id:27, date:'2026-04-29', s1:2, s2:2},
+    {id:28, date:'2026-05-04', s1:2, s2:2},
+    {id:29, date:'2026-05-05', s1:3, s2:1},
+    {id:30, date:'2026-05-06', s1:1, s2:3}
+  ];
+
+  var s1 = 0, s2 = 0;
+
+  // 接続状態の表示
+  db.ref('.info/connected').on('value', function(snap) {
+    var el = document.getElementById('connStatus');
+    if (snap.val()) {
+      el.textContent = '● 接続済み';
+      document.getElementById('addBtn').disabled = false;
+    } else {
+      el.textContent = '○ 接続中...';
+      document.getElementById('addBtn').disabled = true;
+    }
+  });
+
+  // 描画
+  function render(matches) {
+    // 年別集計
+    var years = {};
+    for (var i = 0; i < matches.length; i++) {
+      var m = matches[i];
+      var yr = m.date ? m.date.slice(0, 4) : '????';
+      if (!years[yr]) years[yr] = { w1: 0, w2: 0, dr: 0 };
+      if (m.s1 > m.s2) years[yr].w1++;
+      else if (m.s2 > m.s1) years[yr].w2++;
+      else years[yr].dr++;
+    }
+    var yrKeys = Object.keys(years).sort(function(a, b) { return b - a; });
+    var statsHtml = '';
+    for (var k = 0; k < yrKeys.length; k++) {
+      var yr = yrKeys[k];
+      var st = years[yr];
+      statsHtml += '<div class="year-card">'
+        + '<div class="year-label">' + yr + '年</div>'
+        + '<div class="year-row">'
+        + '<div class="year-col"><div class="col-label">KZ 勝</div><div class="col-val cv1">' + st.w1 + '</div></div>'
+        + '<div class="year-col"><div class="col-label">引き分け</div><div class="col-val cvdr">' + st.dr + '</div></div>'
+        + '<div class="year-col"><div class="col-label">AKI 勝</div><div class="col-val cv2">' + st.w2 + '</div></div>'
+        + '</div></div>';
+    }
+    document.getElementById('statsArea').innerHTML = statsHtml;
+
+    // 試合履歴
+    var list = document.getElementById('list');
+    if (matches.length === 0) {
+      list.innerHTML = '<div class="empty">まだ試合が記録されていません</div>';
+      return;
+    }
+    var sorted = matches.slice().sort(function(a, b) { return b.id - a.id; });
+    var html = '';
+    for (var j = 0; j < sorted.length; j++) {
+      var m = sorted[j];
+      var badge, bc;
+      if (m.s1 > m.s2)      { badge = 'KZ勝';   bc = 'b1'; }
+      else if (m.s2 > m.s1) { badge = 'AKI勝';  bc = 'b2'; }
+      else                   { badge = '引き分け'; bc = 'bdraw'; }
+      var ds = m.date ? m.date.slice(5).replace('-', '/') : '—';
+      html += '<div class="match-item">'
+        + '<span class="mdate">' + ds + '</span>'
+        + '<div class="mresult">'
+        + '<span class="mplayer">KZ</span>'
+        + '<span class="mscore">' + m.s1 + ' : ' + m.s2 + '</span>'
+        + '<span class="mplayer">AKI</span>'
+        + '</div>'
+        + '<span class="badge ' + bc + '">' + badge + '</span>'
+        + '<button class="del-btn" data-id="' + m.id + '">✕</button>'
+        + '</div>';
+    }
+    list.innerHTML = html;
+
+    // 削除ボタン
+    var delBtns = list.getElementsByClassName('del-btn');
+    for (var d = 0; d < delBtns.length; d++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          var id = btn.getAttribute('data-id');
+          if (!confirm('この記録を削除しますか？')) return;
+          matchesRef.child(id).remove();
+        });
+      })(delBtns[d]);
+    }
+  }
+
+  // Firebaseからリアルタイムで受信
+  matchesRef.on('value', function(snapshot) {
+    var data = snapshot.val();
+    var matches = [];
+    if (data) {
+      var keys = Object.keys(data);
+      for (var i = 0; i < keys.length; i++) {
+        var m = data[keys[i]];
+        matches.push({ id: keys[i], date: m.date, s1: m.s1, s2: m.s2 });
+      }
+    } else {
+      // DBが空なら過去データを投入
+      var initData = {};
+      for (var j = 0; j < INIT.length; j++) {
+        initData[INIT[j].id] = { date: INIT[j].date, s1: INIT[j].s1, s2: INIT[j].s2 };
+      }
+      matchesRef.set(initData);
+      return;
+    }
+    render(matches);
+  });
+
+  // スコアボタン
+  function setupScoreBtns(groupId, player) {
+    var grp = document.getElementById(groupId);
+    var btns = grp.getElementsByTagName('button');
+    for (var i = 0; i < btns.length; i++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          var val = parseInt(btn.getAttribute('data-v'), 10);
+          if (player === 1) s1 = val; else s2 = val;
+          for (var j = 0; j < btns.length; j++) btns[j].className = 'score-btn';
+          btn.className = 'score-btn on';
+        });
+      })(btns[i]);
+    }
+  }
+
+  function resetBtns(groupId, player) {
+    if (player === 1) s1 = 0; else s2 = 0;
+    var grp = document.getElementById(groupId);
+    var btns = grp.getElementsByTagName('button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].className = i === 0 ? 'score-btn on' : 'score-btn';
+    }
+  }
+
+  setupScoreBtns('grp1', 1);
+  setupScoreBtns('grp2', 2);
+
+  // 今日の日付
+  var now = new Date();
+  document.getElementById('dateInput').value =
+    now.getFullYear() + '-'
+    + ('0' + (now.getMonth() + 1)).slice(-2) + '-'
+    + ('0' + now.getDate()).slice(-2);
+
+  // 記録ボタン
+  document.getElementById('addBtn').addEventListener('click', function() {
+    var date = document.getElementById('dateInput').value;
+    if (!date) { alert('日付を選んでください'); return; }
+    var id = Date.now();
+    matchesRef.child(id).set({ date: date, s1: s1, s2: s2 });
+    resetBtns('grp1', 1);
+    resetBtns('grp2', 2);
+  });
+
+  // 全削除
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    if (!confirm('全ての記録を削除しますか？')) return;
+    matchesRef.remove();
+  });
+
+})();
+</script>
+
+</body>
+</html>
